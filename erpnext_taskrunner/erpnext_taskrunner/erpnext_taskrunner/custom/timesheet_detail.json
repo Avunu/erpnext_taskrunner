@@ -1,0 +1,45 @@
+{
+    "custom_fields": [
+        {
+            "dt": "Timesheet Detail",
+            "fieldname": "paused",
+            "fieldtype": "Check",
+            "insert_after": "completed",
+            "label": "Paused",
+            "read_only": 1,
+            "module": "ERPNext TaskRunner"
+        },
+        {
+            "dt": "Timesheet Detail",
+            "fieldname": "start_time",
+            "fieldtype": "Datetime",
+            "insert_after": "paused",
+            "label": "Start Time",
+            "read_only": 1,
+            "module": "ERPNext TaskRunner"
+        },
+        {
+            "allow_on_submit": 1,
+            "dt": "Timesheet Detail",
+            "fieldname": "paused_time_in_seconds",
+            "fieldtype": "Int",
+            "insert_after": "start_time",
+            "label": "Paused Time",
+            "read_only": 1,
+            "module": "ERPNext TaskRunner"
+        },
+        {
+            "dt": "Timesheet Detail",
+            "fetch_from": "task.subject",
+            "fieldname": "task_subject",
+            "fieldtype": "Data",
+            "insert_after": "task",
+            "label": "Task Subject",
+            "read_only": 1,
+            "module": "ERPNext TaskRunner"
+        }
+    ],
+    "property_setters": [],
+    "sync_on_migrate": 1,
+    "doctype": "Timesheet Detail"
+}
