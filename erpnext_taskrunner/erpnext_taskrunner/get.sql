@@ -6,26 +6,27 @@ ProjectIndexes AS (
     project_name,
     status
   FROM tabProject
+  WHERE tabProject.docstatus = 0 %(project_filters)s
 ),
 TaskIndexes AS (
   SELECT
-    t.name AS child_name,
-    COALESCE(t.parent_task, t.project) AS parent_name,
+    tabTask.name AS child_name,
+    COALESCE(tabTask.parent_task, tabTask.project) AS parent_name,
     ROW_NUMBER() OVER (
-      PARTITION BY COALESCE(t.parent_task, t.project) 
-      ORDER BY t.creation
+      PARTITION BY COALESCE(tabTask.parent_task, tabTask.project) 
+      ORDER BY tabTask.creation
     ) - 1 AS seq_number
-  FROM tabTask t
-  WHERE t.docstatus = 0 %(filters)s
+  FROM tabTask
+  WHERE tabTask.docstatus = 0 %(task_filters)s
 ),
 TaskTree AS (
   -- Base case: Top-level tasks under projects
   SELECT 
-    t.name AS docName,
-    t.subject AS text,
-    t.project AS parent,
-    t.project,
-    t.status,
+    tabTask.name AS docName,
+    tabTask.subject AS text,
+    tabTask.project AS parent,
+    tabTask.project,
+    tabTask.status,
     p.project_name,
     p.project_idx,
     ti.seq_number AS task_idx,
@@ -37,24 +38,24 @@ TaskTree AS (
     EXISTS (
       SELECT 1
       FROM tabTask child
-      WHERE child.parent_task = t.name AND child.docstatus = 0 %(filters)s
+      WHERE child.parent_task = tabTask.name AND child.docstatus = 0 %(task_filters)s
     ) AS expanded,
     FALSE AS autoFocus,
     CAST(CONCAT('$[', p.project_idx, '].children[', ti.seq_number, ']') AS VARCHAR(1000)) AS json_path
-  FROM tabTask t
-  JOIN ProjectIndexes p ON t.project = p.name
-  JOIN TaskIndexes ti ON t.name = ti.child_name
-  WHERE t.parent_task IS NULL AND t.docstatus = 0 %(filters)s
+  FROM tabTask
+  JOIN ProjectIndexes p ON tabTask.project = p.name
+  JOIN TaskIndexes ti ON tabTask.name = ti.child_name
+  WHERE tabTask.parent_task IS NULL AND tabTask.docstatus = 0 %(task_filters)s
   
   UNION ALL
   
   -- Recursive case: Nested tasks
   SELECT 
-    t.name,
-    t.subject,
-    t.parent_task,
-    t.project,
-    t.status,
+    tabTask.name,
+    tabTask.subject,
+    tabTask.parent_task,
+    tabTask.project,
+    tabTask.status,
     tt.project_name,
     tt.project_idx,
     ti.seq_number,
@@ -66,14 +67,14 @@ TaskTree AS (
     EXISTS (
       SELECT 1
       FROM tabTask child
-      WHERE child.parent_task = t.name AND child.docstatus = 0 %(filters)s
+      WHERE child.parent_task = tabTask.name AND child.docstatus = 0 %(task_filters)s
     ) AS expanded,
     FALSE as autoFocus,
     CAST(CONCAT(tt.json_path, '.children[', ti.seq_number, ']') AS VARCHAR(1000)) AS json_path
-  FROM tabTask t
-  JOIN TaskTree tt ON t.parent_task = tt.docName
-  JOIN TaskIndexes ti ON t.name = ti.child_name
-  WHERE t.docstatus = 0 %(filters)s
+  FROM tabTask
+  JOIN TaskTree tt ON tabTask.parent_task = tt.docName
+  JOIN TaskIndexes ti ON tabTask.name = ti.child_name
+  WHERE tabTask.docstatus = 0 %(task_filters)s
 ),
 projects AS (
   -- Projects list with sequential indices

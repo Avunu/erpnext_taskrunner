@@ -12,25 +12,21 @@ def get():
 	args = get_form_params()
 	
 	where_clause = ""
-	order_by = ""
 
 	if args.filters:
 		conditions = []
-		query_builder = frappe.model.db_query.DatabaseQuery('Task')
+		query_builder = frappe.model.db_query.DatabaseQuery(args.doctype)
 		for filter in args.filters:
-			conditions.append(query_builder.prepare_filter_condition(filter).replace('`tabTask`.', 't.'))
+			conditions.append(query_builder.prepare_filter_condition(filter))
 		if conditions:
 			where_clause = "AND " + " AND ".join(conditions)
-	
-	if args.order_by:
-		# Strip tabTask prefix since our query already scopes fields with t alias
-		order_by = args.order_by.replace('`tabTask`.', 't.')
 
 	query = (Path(__file__).parent / "get.sql").read_text()
 	
 	query = query % {
-		"filters": where_clause,
-		"order_by": order_by or 't.creation DESC'
+		"task_filters": where_clause if args.doctype == 'Task' else '',
+		"project_filters": where_clause if args.doctype == 'Project' else '',
+		"order_by": args.order_by or f'`tab{args.doctype}`.creation DESC'
 	}
 
 	data = frappe.db.sql(query)

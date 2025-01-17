@@ -10,7 +10,7 @@ frappe.views.TaskRunnerSelect = class TaskRunnerSelect extends frappe.views.List
         // Start by calling the original setup_views to get the initial views object
         super.setup_views();
 
-        if (this.doctype === "Task") {
+        if (this.doctype === "Task" || this.doctype === "Project") {
             // Add the Task view to the views object
 
             // TODO: change all tasks/Tasks references to Task/Task without breaking the app

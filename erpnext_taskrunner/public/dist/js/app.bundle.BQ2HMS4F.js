@@ -13100,7 +13100,7 @@ Expected function or array of functions, received type ${typeof value}.`
   frappe.views.TaskRunnerSelect = class TaskRunnerSelect extends frappe.views.ListViewSelect {
     setup_views() {
       super.setup_views();
-      if (this.doctype === "Task") {
+      if (this.doctype === "Task" || this.doctype === "Project") {
         this.add_view_to_menu(
           "Tasks",
           () => {
@@ -13229,4 +13229,4 @@ Expected function or array of functions, received type ${typeof value}.`
 * (c) 2018-present Yuxi (Evan) You and Vue contributors
 * @license MIT
 **/
-//# sourceMappingURL=app.bundle.5E6NSYKW.js.map
+//# sourceMappingURL=app.bundle.BQ2HMS4F.js.map
