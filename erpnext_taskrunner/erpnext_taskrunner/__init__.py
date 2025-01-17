@@ -1,29 +1,41 @@
 import datetime
 import frappe
 import json
-from frappe.desk.reportview import get_form_params # type: ignore
+from frappe.desk.reportview import get_form_params
 from pathlib import Path
-from jsonpath_ng import parse # type: ignore
+from jsonpath_ng import parse
 
 
 @frappe.whitelist()
 @frappe.read_only()
 def get():
-	# filters are the only useful arg
-
-	# TODO: add filters to the query (NOT PART OF THE MVP)
 	args = get_form_params()
+	
+	where_clause = ""
+	order_by = ""
+
+	if args.filters:
+		conditions = []
+		query_builder = frappe.model.db_query.DatabaseQuery('Task')
+		for filter in args.filters:
+			conditions.append(query_builder.prepare_filter_condition(filter).replace('`tabTask`.', 't.'))
+		if conditions:
+			where_clause = "AND " + " AND ".join(conditions)
+	
+	if args.order_by:
+		# Strip tabTask prefix since our query already scopes fields with t alias
+		order_by = args.order_by.replace('`tabTask`.', 't.')
 
 	query = (Path(__file__).parent / "get.sql").read_text()
-
-	# # example of how to inject the filters into the query
-	# query = query % {
-	#  "filters": args.filters if args.filters else ""
-	# }
+	
+	query = query % {
+		"filters": where_clause,
+		"order_by": order_by or 't.creation DESC'
+	}
 
 	data = frappe.db.sql(query)
 	root = merge_tree(data)
-	data_tree = get_timesheet_details(root)
+	data_tree = get_timesheet_details(root) 
 	return data_tree
 
 

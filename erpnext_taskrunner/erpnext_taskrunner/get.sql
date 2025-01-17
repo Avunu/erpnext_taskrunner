@@ -13,10 +13,10 @@ TaskIndexes AS (
     COALESCE(t.parent_task, t.project) AS parent_name,
     ROW_NUMBER() OVER (
       PARTITION BY COALESCE(t.parent_task, t.project) 
-      -- ORDER BY t.name
-      ORDER BY t.creation  -- Order by creation instead of name
+      ORDER BY t.creation
     ) - 1 AS seq_number
   FROM tabTask t
+  WHERE t.docstatus = 0 %(filters)s
 ),
 TaskTree AS (
   -- Base case: Top-level tasks under projects
@@ -37,14 +37,14 @@ TaskTree AS (
     EXISTS (
       SELECT 1
       FROM tabTask child
-      WHERE child.parent_task = t.name
+      WHERE child.parent_task = t.name AND child.docstatus = 0 %(filters)s
     ) AS expanded,
     FALSE AS autoFocus,
     CAST(CONCAT('$[', p.project_idx, '].children[', ti.seq_number, ']') AS VARCHAR(1000)) AS json_path
   FROM tabTask t
   JOIN ProjectIndexes p ON t.project = p.name
   JOIN TaskIndexes ti ON t.name = ti.child_name
-  WHERE t.parent_task IS NULL AND t.docstatus = 0
+  WHERE t.parent_task IS NULL AND t.docstatus = 0 %(filters)s
   
   UNION ALL
   
@@ -66,14 +66,14 @@ TaskTree AS (
     EXISTS (
       SELECT 1
       FROM tabTask child
-      WHERE child.parent_task = t.name
+      WHERE child.parent_task = t.name AND child.docstatus = 0 %(filters)s
     ) AS expanded,
     FALSE as autoFocus,
     CAST(CONCAT(tt.json_path, '.children[', ti.seq_number, ']') AS VARCHAR(1000)) AS json_path
   FROM tabTask t
   JOIN TaskTree tt ON t.parent_task = tt.docName
   JOIN TaskIndexes ti ON t.name = ti.child_name
-  WHERE t.docstatus = 0
+  WHERE t.docstatus = 0 %(filters)s
 ),
 projects AS (
   -- Projects list with sequential indices
